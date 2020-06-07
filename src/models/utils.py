@@ -19,6 +19,7 @@ def get_object_or_404(model, mid):
 
     """
     try:
-        return model.query.one(pk=mid)
+        print(dir(model))
+        return model.query.filter(model.id == mid).one()
     except SQLAlchemyError:
         abort(404)
