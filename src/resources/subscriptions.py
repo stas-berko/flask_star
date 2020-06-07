@@ -1,12 +1,33 @@
 """Subscription resource for handling any subscription requests"""
-from flask import jsonify
+from flask import jsonify, request
 from webargs import fields
 from webargs.flaskparser import use_kwargs
-from flask_restful import Resource
+from flask_restful import Resource, reqparse
 
+from src.models.base import db
 from src.models.subscriptions import Subscription
+from src.models.plans_versioning import SubscriptionsPlanVersion
 from src.models.utils import get_object_or_404
 from src.schemas.subscriptions import SubscriptionSchema
+
+
+class SubscriptionsPlanVersionApi(Resource):
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument('plan_id', type=int, location='json')
+        self.reqparse.add_argument('subscription_id', type=int, location='json')
+        self.reqparse.add_argument('standard_bc', type=bool, location='json')
+        super().__init__()
+
+    def post(self):
+        args = self.reqparse.parse_args(strict=True)
+        new_subscription = SubscriptionsPlanVersion(plan_id=args["plan_id"],
+                                                    subscription_id=args["subscription_id"],
+                                                    standard_bc=args["standard_bc"])
+        new_subscription.activate_plan(standard_bc=args["standard_bc"])
+        db.session.add(new_subscription)
+        db.session.commit()
+        return {"status": "ok"}
 
 
 class SubscriptionAPI(Resource):
@@ -24,6 +45,7 @@ class SubscriptionAPI(Resource):
             json: serialized subscription object
 
         """
+
         subscription = get_object_or_404(Subscription, sid)
         result = SubscriptionSchema().dump(subscription)
         return jsonify(result.data)
