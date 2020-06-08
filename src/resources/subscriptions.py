@@ -21,10 +21,12 @@ class SubscriptionsPlanVersionApi(Resource):
 
     def post(self):
         args = self.reqparse.parse_args(strict=True)
+        subs = Subscription.query.filter_by(id == args["subscription_id"]).one()
         new_subscription = SubscriptionsPlanVersion(plan_id=args["plan_id"],
-                                                    subscription_id=args["subscription_id"],
+                                                    subscription_id=subs,
                                                     standard_bc=args["standard_bc"])
         new_subscription.activate_plan(standard_bc=args["standard_bc"])
+
         db.session.add(new_subscription)
         db.session.commit()
         return {"status": "ok"}

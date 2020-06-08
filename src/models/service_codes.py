@@ -1,6 +1,6 @@
 """Plans and Service related models and database functionality"""
 from flask import current_app
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, desc, asc
 from sqlalchemy.dialects.postgresql import ARRAY
 from src.models.base import db
 
@@ -22,6 +22,12 @@ class Plan(db.Model):
     # amount of data available for a given billing cycle
     mb_available = db.Column(db.BigInteger)
     is_unlimited = db.Column(db.Boolean)
+
+    @classmethod
+    def can_backdate_to(cls, current_plan, mb_usage):
+        possible_plan = cls.query.filter(cls.mb_available >= mb_usage).order_by(asc(cls.mb_available)).first()
+        if current_plan.plan_id != possible_plan.id:
+            return possible_plan
 
     def __repr__(self):  # pragma: no cover
         return (

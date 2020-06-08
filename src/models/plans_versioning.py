@@ -1,6 +1,8 @@
 """Subscription related models and database functionality"""
 from datetime import datetime
 
+from sqlalchemy import desc
+
 from src.models.base import db
 from src.models.subscriptions import Subscription
 from src.models.service_codes import Plan
@@ -11,11 +13,14 @@ from src.models.utils import add_one_month
 class SubscriptionsPlanVersion(db.Model):
     """Model class to represent ATT subscriptions"""
 
-    def __init__(self, plan_id, subscription_id, standard_bc):
+    def __init__(self, plan_id, subscription_id, standard_bc, activation_date=None, end_date=None):
         self.plan_id = plan_id
         self.subscription_id = subscription_id
         self.standard_bc = standard_bc
         self.creation_date = datetime.now()
+        if activation_date and end_date:
+            self.activation_date = activation_date
+            self.end_date = end_date
 
     __tablename__ = "subscriptions_plan_version"
 
@@ -38,6 +43,11 @@ class SubscriptionsPlanVersion(db.Model):
         foreign_keys=[subscription_id],
         lazy="select")
 
+    @classmethod
+    def get_current_plan(cls, subscription_id):
+        return cls.query.filter(cls.subscription_id == subscription_id) \
+            .order_by(desc(cls.creation_date)).first()
+
     def activate_plan(self, standard_bc):
         if standard_bc:
             bc_entity = BillingCycle.get_current_cycle()
@@ -49,6 +59,6 @@ class SubscriptionsPlanVersion(db.Model):
 
     def __repr__(self):  # pragma: no cover
         return (
-            f"<{self.__class__.__name__}: {self.id} ({self.standard_bc})",
+            f"<{self.__class__.__name__}: {self.id} ({self.standard_bc})"
             f"plan: {self.plan_id}>"
         )
