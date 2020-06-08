@@ -10,12 +10,13 @@ log = get_task_logger(__name__)
 
 
 @celery.task()
-def query_subscription_plans(plan_id, subscription_id):
+def query_subscription_plans(subscription_id, billing_cycle_id):
     """Add google style doc string here
 
     (https://www.sphinx-doc.org/en/1.7/ext/example_google.html)
 
     """
-    from src.models.service_codes import Plan
+    from src.models.plans_versioning import SubscriptionsPlanVersion
+    current_plan = SubscriptionsPlanVersion.get_current_plan(subscription_id=subscription_id)
 
-    return plan_id
+    return [(current_plan.plan.mb_available, current_plan.activation_date, current_plan.end_date), ]
