@@ -3,8 +3,6 @@ from celery import Celery
 from celery.signals import task_failure, task_postrun
 from celery.utils.log import get_task_logger
 
-celery = Celery("att")
-
 logger = get_task_logger(__name__)
 
 
@@ -18,6 +16,11 @@ def configure_celery(app):
         object: configured celery app object
 
     """
+    celery = Celery(
+        app.import_name,
+        backend=app.config['CELERY_RESULT_BACKEND'],
+        broker=app.config['CELERY_BROKER_URL']
+    )
     celery.conf.update(app.config)
 
     # subclass task base for app context
